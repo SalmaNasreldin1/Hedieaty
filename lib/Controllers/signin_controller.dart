@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../database/database_conn.dart';
 
 class SignInController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final MyDatabaseClass _dbHelper = MyDatabaseClass();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Future<String> signIn(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
@@ -19,6 +21,9 @@ class SignInController {
       );
 
       String uid = userCredential.user!.uid;
+
+      // Save the UID securely
+      await _secureStorage.write(key: 'userUID', value: uid);
 
       final db = await _dbHelper.mydbcheck();
       List<Map<String, dynamic>> existingUsers = await db!.query(
@@ -47,5 +52,9 @@ class SignInController {
       }
       return 'An error occurred: $e';
     }
+  }
+
+  Future<String?> getUserUID() async {
+    return await _secureStorage.read(key: 'userUID');
   }
 }

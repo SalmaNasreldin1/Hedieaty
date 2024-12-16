@@ -100,13 +100,11 @@
 
 import 'package:flutter/material.dart';
 import 'HomePage.dart';
-import 'GiftListPage.dart';
-import 'EventListPage.dart';
-import 'GiftDetailsPage.dart';
 import 'ProfilePage.dart';
 import 'MyPledgedGiftsPage.dart';
 import 'Views/signin_view.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'Views/my_event_list_view.dart';
 
 
 void main() async {

@@ -214,6 +214,8 @@
 // }
 import 'package:flutter/material.dart';
 import 'GiftListPage.dart';
+import 'Controllers/signin_controller.dart';
+
 
 class EventListPage extends StatefulWidget {
   @override
@@ -221,8 +223,15 @@ class EventListPage extends StatefulWidget {
 }
 
 class _EventListPageState extends State<EventListPage> {
+  final SignInController signInController = SignInController();
   List<String> events = ['My Birthday', 'My Wedding Anniversary'];
   String selectedFilter = 'All';
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

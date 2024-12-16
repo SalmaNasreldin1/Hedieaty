@@ -39,6 +39,7 @@ class MyDatabaseClass {
     await db.execute('''
     CREATE TABLE Events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      firebase_id TEXT, 
       name TEXT NOT NULL,
       date TEXT NOT NULL,
       location TEXT NOT NULL,
