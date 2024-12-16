@@ -38,10 +38,12 @@ class EventController {
   }
 
   Future<void> publishEvent(Map<String, dynamic> eventData) async {
+    eventData['published'] = 1;
     await _eventModel.publishEventToFirebase(eventData);
   }
 
   Future<void> unpublishEvent(Map<String, dynamic> eventData) async {
+    eventData['published'] = 0;
     await _eventModel.unpublishEventFromFirebase(eventData);
   }
 }

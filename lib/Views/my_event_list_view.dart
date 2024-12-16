@@ -179,24 +179,29 @@ class _EventListPageState extends State<EventListPage> {
                 children: [
                   IconButton(
                     icon: Icon(
-                      Icons.cloud,
+                      Icons.cloud_download_rounded,
                       color: event['published'] == 1 ? Colors.green : Colors.red,
                     ),
                     onPressed: () async {
                       try {
+                        // Create a copy of the event to update
+                        Map<String, dynamic> updatedEvent = Map<String, dynamic>.from(event);
+
                         if (event['published'] == 1) {
                           // Unpublish the event
-                          await _eventController.unpublishEvent(event);
-                          setState(() {
-                            event['published'] = 0;
-                          });
+                          await _eventController.unpublishEvent(updatedEvent);
+                          updatedEvent['published'] = 0;
                         } else {
                           // Publish the event
-                          await _eventController.publishEvent(event);
-                          setState(() {
-                            event['published'] = 1;
-                          });
+                          await _eventController.publishEvent(updatedEvent);
+                          updatedEvent['published'] = 1;
                         }
+
+                        // Replace the event in the list with the updated event
+                        setState(() {
+                          events = List<Map<String, dynamic>>.from(events); // Ensure list is mutable
+                          events[index] = updatedEvent;
+                        });
                       } catch (e) {
                         print(e);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -204,6 +209,8 @@ class _EventListPageState extends State<EventListPage> {
                         );
                       }
                     },
+
+
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit),
