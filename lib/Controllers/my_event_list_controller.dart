@@ -30,8 +30,13 @@ class EventController {
 
 
   Future<void> editEvent(int id, Map<String, dynamic> eventData) async {
-    await _eventModel.updateEvent(id, eventData);
+    await _eventModel.updateEvent(id, eventData); // Update SQLite first
+    // If the event is published, update Firebase
+    if (eventData['published'] == 1 && eventData['firebase_id'] != null) {
+      await _eventModel.publishEventToFirebase(eventData);
+    }
   }
+
 
   Future<void> removeEvent(int id) async {
     await _eventModel.deleteEvent(id);
