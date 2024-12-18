@@ -14,15 +14,31 @@ class MyDatabaseClass {
   }
   
   int Version = 1;
-  initiatedatabase() async {
-    String databasedestination = await getDatabasesPath();
-    String databasepath  = join(databasedestination,'database.db');
-    Database mydatabase1 = await openDatabase(
-      databasepath,
-      version: Version,
+  // initiatedatabase() async {
+  //   String databasedestination = await getDatabasesPath();
+  //   String databasepath  = join(databasedestination,'database.db');
+  //   Database mydatabase1 = await openDatabase(
+  //     databasepath,
+  //     version: Version,
+  //     onCreate: _onCreate,
+  //   );
+  //   return mydatabase1;
+  // }
+
+  Future<Database> initiatedatabase() async {
+    final dbPath = await getDatabasesPath();
+    print(dbPath);
+    final path = join(dbPath, 'database.db');
+
+    return await openDatabase(
+      path,
+      version: 1,
       onCreate: _onCreate,
+      onOpen: (db) async {
+        // Enable foreign key constraints
+        await db.execute('PRAGMA foreign_keys = ON;');
+      },
     );
-    return mydatabase1;
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -39,7 +55,7 @@ class MyDatabaseClass {
     await db.execute('''
     CREATE TABLE Events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      firebase_id TEXT, 
+      firebase_id TEXT UNIQUE, 
       name TEXT NOT NULL,
       date TEXT NOT NULL,
       location TEXT NOT NULL,
@@ -52,18 +68,21 @@ class MyDatabaseClass {
   ''');
 
     await db.execute('''
-    CREATE TABLE Gifts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT,
-      category TEXT NOT NULL,
-      price REAL NOT NULL,
-      status TEXT NOT NULL,
-      published INTEGER NOT NULL CHECK (published IN (0, 1)),
-      event_id INTEGER NOT NULL,
-      FOREIGN KEY (event_id) REFERENCES Events (id) ON DELETE CASCADE
-    );
-  ''');
+  CREATE TABLE Gifts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT NOT NULL,
+    price REAL NOT NULL,
+    status TEXT NOT NULL,
+    published INTEGER NOT NULL CHECK (published IN (0, 1)),
+    event_id Text NOT NULL,
+    firebase_id Text,
+    imageLink Text,
+    FOREIGN KEY (event_id) REFERENCES Events (firebase_id) ON DELETE CASCADE
+  );
+''');
+
 
     await db.execute('''
     CREATE TABLE Friends (

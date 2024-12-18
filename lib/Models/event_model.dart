@@ -36,7 +36,10 @@ class EventModel {
     );
   }
 
-  Future<void> deleteEvent(int id) async {
+  Future<void> deleteEvent(int id,Map<String, dynamic> eventData) async {
+    if( eventData['firebase_id'] != null){
+      unpublishEventFromFirebase(eventData);
+    }
     final db = await _dbHelper.mydbcheck();
     await db!.delete(
       'Events',
@@ -54,6 +57,17 @@ class EventModel {
           .collection('Events')
           .doc(eventData['firebase_id'])
           .set(eventData);
+
+      if (eventData['id'] != null) {
+        await db!.update(
+          'Events',
+          {'published': 1},
+          where: 'id = ?',
+          whereArgs: [eventData['id']],
+        );
+      } else {
+        throw Exception("Event ID is null. Cannot update SQLite with Firebase ID.");
+      }
     } else {
       // Create a new Firestore document
       DocumentReference docRef = await _firestore.collection('Events').add(eventData);

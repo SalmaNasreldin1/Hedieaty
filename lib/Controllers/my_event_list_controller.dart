@@ -1,7 +1,10 @@
 import '../Models/event_model.dart';
+import 'gift_controller.dart';
 
 class EventController {
   final EventModel _eventModel = EventModel();
+  final GiftController _giftController = GiftController();
+
 
   Future<List<Map<String, dynamic>>> fetchEvents() async {
     return await _eventModel.getEvents();
@@ -38,8 +41,10 @@ class EventController {
   }
 
 
-  Future<void> removeEvent(int id) async {
-    await _eventModel.deleteEvent(id);
+  Future<void> removeEvent(int id, Map<String, dynamic> eventData) async {
+    await _giftController.deleteGiftsByEvent(eventData['firebaseId']);
+    // Delete event
+    await _eventModel.deleteEvent(id, eventData['firebaseId']);
   }
 
   Future<void> publishEvent(Map<String, dynamic> eventData) async {
