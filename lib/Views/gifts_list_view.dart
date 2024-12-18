@@ -211,10 +211,30 @@ class _GiftListPageState extends State<GiftListPage> {
               ),
             ),
             title: Text(gift['name']),
-            subtitle: Text('Category: ${gift['category']}'),
-            trailing:  Row(
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Category: ${gift['category']}'),
+                Text('Price: \$${gift['price']}'),
+              ],
+            ),
+            trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Visual indicator for pledged status
+                IconButton(
+                  icon: Icon(
+                    Icons.card_giftcard,
+                    color: gift['status'] == 'pledged' ? Colors.orangeAccent : Colors.grey, // Color based on pledged status
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      // Toggle the pledged status and update the color
+                      gift['status'] = gift['status'] == 'pledged' ? 'available' : 'pledged';
+                    });
+                  },
+                ),
+                // Publish/unpublish button
                 IconButton(
                   icon: Icon(
                     Icons.cloud_download_rounded,
@@ -248,12 +268,12 @@ class _GiftListPageState extends State<GiftListPage> {
                     }
                   },
                 ),
-
+                // Delete button
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.black45),
-                  onPressed:
-                  gift['status'] == 'pledged'? null:
-                      () async {
+                  onPressed: gift['status'] == 'pledged'
+                      ? null
+                      : () async {
                     await _giftController.deleteGift(gift);
                     _loadGifts();
                   },
