@@ -163,7 +163,19 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
                   SwitchListTile(
                     title: const Text('Publish Gift'),
                     value: isPublished,
-                    onChanged: (value) {
+                    onChanged: (value) async {
+                      // Execute the asynchronous work first
+                      if (value == 1) {
+                        // Unpublish the gift
+                        await _giftController.unpublishGift(widget.gift);
+                        widget.gift['published'] = 0;
+                      } else {
+                        // Publish the gift
+                        await _giftController.publishGift(widget.gift);
+                        widget.gift['published'] = 1;
+                      }
+
+                      // Update the state synchronously inside setState
                       setState(() {
                         isPublished = value;
                       });

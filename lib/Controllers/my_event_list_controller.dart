@@ -42,9 +42,9 @@ class EventController {
 
 
   Future<void> removeEvent(int id, Map<String, dynamic> eventData) async {
-    await _giftController.deleteGiftsByEvent(eventData['firebaseId']);
+    await _giftController.deleteGiftsByEvent(eventData['firebase_id']);
     // Delete event
-    await _eventModel.deleteEvent(id, eventData['firebaseId']);
+    await _eventModel.deleteEvent(id, eventData);
   }
 
   Future<void> publishEvent(Map<String, dynamic> eventData) async {

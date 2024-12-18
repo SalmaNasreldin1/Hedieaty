@@ -383,7 +383,7 @@ class _EventListPageState extends State<EventListPage> {
                                                 color: Colors.black45),
                                             onPressed: () async {
                                               await _eventController
-                                                  .removeEvent(event['id'],event['firebase_id']);
+                                                  .removeEvent(event['id'],event);
                                               _loadEvents();
                                             },
                                           ),
