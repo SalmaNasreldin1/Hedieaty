@@ -37,7 +37,7 @@ class SignUpController {
         'uid': uid,
         'name': name,
         'email': email,
-        'mobile': mobile,
+        'mobile': mobile.trim(),
         'preferences': '',
       });
 

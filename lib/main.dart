@@ -99,7 +99,7 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'HomePage.dart';
+import 'Views/home_page_view.dart';
 import 'ProfilePage.dart';
 import 'MyPledgedGiftsPage.dart';
 import 'Views/signin_view.dart';

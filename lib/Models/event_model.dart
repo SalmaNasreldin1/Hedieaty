@@ -106,4 +106,18 @@ class EventModel {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getFriendEvents(String friendFirebaseId) async {
+    QuerySnapshot querySnapshot = await _firestore
+        .collection('Events')
+        .where('user_id', isEqualTo: friendFirebaseId)
+        .get();
+
+    return querySnapshot.docs.map((doc) {
+      return {
+        ...doc.data() as Map<String, dynamic>,
+        'firebase_id': doc.id, // Add Firebase ID for each event
+      };
+    }).toList();
+  }
+
 }
