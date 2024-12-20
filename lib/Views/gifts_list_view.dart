@@ -3,6 +3,9 @@ import '../Controllers/gift_controller.dart';
 import 'gift_details_view.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../Controllers/signin_controller.dart';
+import '../Controllers/friend_gift_controller.dart';
+
 
 
 class GiftListPage extends StatefulWidget {
@@ -18,7 +21,12 @@ class GiftListPage extends StatefulWidget {
 
 class _GiftListPageState extends State<GiftListPage> {
   final GiftController _giftController = GiftController();
+  final FriendGiftController _friendGiftController = FriendGiftController();
+  final SignInController signInController = SignInController();
   List<Map<String, dynamic>> gifts = [];
+  String selectedFilter = 'All';
+  String searchQuery = '';
+  String sortBy = 'name'; // Default sort by name
 
   @override
   void initState() {
@@ -30,6 +38,46 @@ class _GiftListPageState extends State<GiftListPage> {
     final data = await _giftController.fetchGifts(widget.eventId);
     setState(() {
       gifts = data;
+      _applyFilters();
+    });
+  }
+
+  void _togglePledgeStatus(Map<String, dynamic> gift, int index, String userId) async {
+    final isPledged = gift['status'] == 'pledged';
+
+    try {
+      // Update the status in Firebase
+      await _friendGiftController.togglePledgeStatus(gift['firebase_id'], !isPledged, userId);
+
+      // Update the local state after a successful Firebase update
+      setState(() {
+        gifts[index]['status'] = !isPledged ? 'pledged' : 'available';
+        gifts[index]['pledged_by'] = !isPledged ? userId : ''; // Update local data
+      });
+    } catch (e) {
+      print(e);
+      // Handle errors (e.g., network issues)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating pledge status: $e')),
+      );
+    }
+  }
+
+  void _applyFilters() {
+    List<Map<String, dynamic>> filteredGifts = gifts;
+
+    // Apply the search query
+    if (searchQuery.isNotEmpty) {
+      filteredGifts = filteredGifts
+          .where((gift) =>
+          gift['name'].toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    }
+
+
+    // Update the displayed gifts
+    setState(() {
+      gifts = filteredGifts;
     });
   }
 
@@ -145,9 +193,10 @@ class _GiftListPageState extends State<GiftListPage> {
                   'category': categoryController.text,
                   'price': double.tryParse(priceController.text) ?? 0.0,
                   'status': isPledged ? 'pledged' : 'available',
+                  'pledged_by': isPledged ? await signInController.getUserUID() : '',
                   'event_id': widget.eventId,
                   'published': isPublished ? 1 : 0,
-                  'imageLink': selectedImage?.path, // Include published field
+                  'imageLink': selectedImage?.path,// Include published field
                 };
 
                 if (gift == null) {
@@ -177,117 +226,264 @@ class _GiftListPageState extends State<GiftListPage> {
     );
 
     if (updatedGift != null) {
-      setState(() {
+      setState(()  {
         final index = gifts.indexWhere((g) => g['id'] == updatedGift['id']);
         if (index != -1) {
           gifts[index] = updatedGift; // Update the gift in the list
         }
+         _loadGifts();
       });
     }
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Sort by Name'),
+              onTap: () {
+                setState(() {
+                  sortBy = 'name';
+                  _applyFilters();
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Sort by Category'),
+              onTap: () {
+                setState(() {
+                  sortBy = 'category';
+                  _applyFilters();
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Sort by Status'),
+              onTap: () {
+                setState(() {
+                  sortBy = 'status';
+                  _applyFilters();
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Gifts for ${widget.eventName}')),
-      body: ListView.builder(
-        itemCount: gifts.length,
-        itemBuilder: (context, index) {
-          final gift = gifts[index];
-          return ListTile(
-            leading:  Container(
-              height: 60,
-              width: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8), // Slightly rounded corners
-                image: DecorationImage(
-                  image: gift['imageLink'] != null
-                      ? FileImage(File(gift['imageLink']))
-                      : const AssetImage('assets/gift_placeholder.png') as ImageProvider,
-                  fit: BoxFit.cover, // Ensures the image fits the container
-                ),
-                color: Colors.grey[200], // Background color for placeholder
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Gifts for ${widget.eventName}',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage("assets/Colorful Watercolor Painting.png"),
+                fit: BoxFit.cover,
               ),
             ),
-            title: Text(gift['name']),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          SafeArea(
+            child: Column(
               children: [
-                Text('Category: ${gift['category']}'),
-                Text('Price: \$${gift['price']}'),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Visual indicator for pledged status
-                IconButton(
-                  icon: Icon(
-                    Icons.card_giftcard,
-                    color: gift['status'] == 'pledged' ? Colors.orangeAccent : Colors.grey, // Color based on pledged status
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      // Toggle the pledged status and update the color
-                      gift['status'] = gift['status'] == 'pledged' ? 'available' : 'pledged';
-                    });
-                  },
-                ),
-                // Publish/unpublish button
-                IconButton(
-                  icon: Icon(
-                    Icons.cloud_download_rounded,
-                    color: gift['published'] == 1 ? Colors.green : Colors.red,
-                  ),
-                  onPressed: () async {
-                    try {
-                      // Create a copy of the gift to update
-                      Map<String, dynamic> updatedGift = Map<String, dynamic>.from(gift);
-
-                      if (gift['published'] == 1) {
-                        // Unpublish the gift
-                        await _giftController.unpublishGift(updatedGift);
-                        updatedGift['published'] = 0;
-                      } else {
-                        // Publish the gift
-                        await _giftController.publishGift(updatedGift);
-                        updatedGift['published'] = 1;
-                      }
-
-                      // Update the gift list
+                // Search Bar with Sorting Icon
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search Gifts...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.sort),
+                        onPressed: _showSortOptions,
+                      ),
+                      fillColor: Colors.white,
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (value) {
                       setState(() {
-                        gifts = List<Map<String, dynamic>>.from(gifts);
-                        gifts[index] = updatedGift;
+                        searchQuery = value;
+                        _applyFilters();
                       });
-                    } catch (e) {
-                      print(e);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: ${e.toString()}')),
-                      );
-                    }
-                  },
+                    },
+                  ),
                 ),
-                // Delete button
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.black45),
-                  onPressed: gift['status'] == 'pledged'
-                      ? null
-                      : () async {
-                    await _giftController.deleteGift(gift);
-                    _loadGifts();
-                  },
+
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white70,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 5,
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: ListView.builder(
+                          itemCount: gifts.length,
+                          itemBuilder: (context, index) {
+                            final gift = gifts[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  height: 60,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: DecorationImage(
+                                      image: gift['imageLink'] != null
+                                          ? FileImage(File(gift['imageLink']))
+                                          : const AssetImage('assets/gift_placeholder.png')
+                                      as ImageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    color: Colors.grey[200],
+                                  ),
+                                ),
+                                title: Text(gift['name']),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Category: ${gift['category']}'),
+                                    Text('Price: \$${gift['price']}'),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Visual indicator for pledged status
+                                    // IconButton(
+                                    //   icon: Icon(
+                                    //     Icons.card_giftcard,
+                                    //     color: gift['status'] == 'pledged'
+                                    //         ? Colors.orangeAccent
+                                    //         : Colors.grey,
+                                    //   ),
+                                    //   onPressed: () async {
+                                    //     try {
+                                    //       // Retrieve the user's Firebase ID asynchronously
+                                    //       final userId = await signInController.getUserUID(); // Replace with your actual future function
+                                    //
+                                    //       print(gift);
+                                    //       // Call the _togglePledgeStatus function with the retrieved user ID
+                                    //       _togglePledgeStatus(gift,index,userId!);
+                                    //     } catch (e) {
+                                    //       // Handle potential errors
+                                    //       print (e);
+                                    //       ScaffoldMessenger.of(context).showSnackBar(
+                                    //         SnackBar(content: Text('Error: ${e.toString()}')),
+                                    //       );
+                                    //     }
+                                    //   } ,
+                                    // ),
+                                    // Publish/unpublish button
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.cloud_download_rounded,
+                                        color: gift['published'] == 1 ? Colors.green : Colors.red,
+                                      ),
+                                      onPressed: () async {
+                                        try {
+                                          // Create a copy of the gift to update
+                                          Map<String, dynamic> updatedGift = Map<String, dynamic>.from(gift);
+
+                                          if (gift['published'] == 1) {
+                                            // Unpublish the gift
+                                            await _giftController.unpublishGift(updatedGift);
+                                            updatedGift['published'] = 0;
+                                          } else {
+                                            // Publish the gift
+                                            await _giftController.publishGift(updatedGift);
+                                            updatedGift['published'] = 1;
+                                          }
+
+                                          // Update the gift list
+                                          setState(() {
+                                            gifts = List<Map<String, dynamic>>.from(gifts);
+                                            gifts[index] = updatedGift;
+                                          });
+                                        } catch (e) {
+                                          print(e);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Error: ${e.toString()}')),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    // Delete button
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.black45),
+                                      onPressed: gift['status'] == 'pledged'
+                                          ? null
+                                          : () async {
+                                        await _giftController.deleteGift(gift);
+                                        _loadGifts();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                onTap: () => _navigateToGiftDetails(gift),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            onTap: () => _navigateToGiftDetails(gift),
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.purple.shade100,
         onPressed: () => _showGiftDialog(),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.purple),
       ),
     );
   }
 }
+

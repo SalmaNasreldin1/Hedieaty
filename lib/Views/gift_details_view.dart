@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../Controllers/gift_controller.dart';
+import '../Controllers/signin_controller.dart';
 
 class GiftDetailsPage extends StatefulWidget {
   final Map<String, dynamic> gift;
@@ -14,6 +15,7 @@ class GiftDetailsPage extends StatefulWidget {
 
 class _GiftDetailsPageState extends State<GiftDetailsPage> {
   final GiftController _giftController = GiftController();
+  final SignInController signInController = SignInController();
   late TextEditingController nameController;
   late TextEditingController descriptionController;
   late TextEditingController categoryController;
@@ -66,6 +68,8 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
       'published': isPublished ? 1 : 0,
       'imageLink': selectedImage?.path ?? widget.gift['imageLink'], // Keep existing path if no new image
       'firebase_id': widget.gift['firebase_id'], // Ensure firebase_id is retained
+      'pledged_by': isPledged ? await signInController.getUserUID() : '',
+      'event_id': widget.gift['event_id'],
     };
 
     try {
@@ -182,16 +186,17 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
                     },
                   ),
                   SwitchListTile(
-                    title: const Text('Pledged Gift'),
+                    title: const Text('Pledge Gift'),
                     value: isPledged,
-                    onChanged: (value) {
+                    onChanged: (value) async {
+                      String? user_firebase_id = await signInController.getUserUID();
+                      if (value) {
+                        await _giftController.pledgeGift(widget.gift['id'], user_firebase_id!); // Replace with user ID
+                      } else {
+                        await _giftController.unpledgeGift(widget.gift['id']);
+                      }
                       setState(() {
                         isPledged = value;
-
-                        // If toggled to pledged, disable editing
-                        if (isPledged) {
-                          isPublished = false; // Optional: Unpublish when pledged
-                        }
                       });
                     },
                   ),

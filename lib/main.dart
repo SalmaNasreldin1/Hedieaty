@@ -101,10 +101,11 @@
 import 'package:flutter/material.dart';
 import 'Views/home_page_view.dart';
 import 'ProfilePage.dart';
-import 'MyPledgedGiftsPage.dart';
+import 'package:hedieaty/Views/pledged_gifts_view.dart';
 import 'Views/signin_view.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'Views/my_event_list_view.dart';
+import 'Controllers/signin_controller.dart';
 
 
 void main() async {
@@ -157,19 +158,43 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  final SignInController signInController = SignInController();
+  String? uid ;
 
-  final List<Widget> _pages = [
-    HomePage(),
-    EventListPage(),
-    MyPledgedGiftsPage(),
-    ProfilePage(),
-  ];
+  // final List<Widget> _pages = [
+  //   HomePage(),
+  //   EventListPage(),
+  //   MyPledgedGiftsPage(uid: uid),
+  //   ProfilePage(),
+  // ];
+
+  List<Widget> _pages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUID();
+  }
+
+  Future<void> _initializeUID() async {
+    uid = await signInController.getUserUID();
+    setState(() {
+      _pages.addAll([
+        HomePage(),
+        EventListPage(),
+        PledgedGiftsPage( userId: uid!), // Pass the UID here
+        ProfilePage(),
+      ]);
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
+  // Future<String?> getUID()async => await signInController.getUserUID();
 
   @override
   Widget build(BuildContext context) {

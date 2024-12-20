@@ -7,8 +7,17 @@ class GiftController {
     return _giftModel.fetchGifts(eventId);
   }
 
-  Future<int> addGift(Map<String, dynamic> giftData) {
-    return _giftModel.addGift(giftData);
+  Future<int> addGift(Map<String, dynamic> giftData) async {
+    final giftId = await _giftModel.addGift(giftData);
+
+    // Check if the gift is marked as published
+    if (giftData['published'] == 1) {
+      // Fetch the full gift data (with generated ID) to publish to Firebase
+      giftData['id'] = giftId;
+      await _giftModel.publishGiftToFirebase(giftData);
+    }
+
+    return giftId;
   }
 
   Future<void> updateGift(int giftId, Map<String, dynamic> updatedData) async {
@@ -44,4 +53,21 @@ class GiftController {
   Future<void> deleteGiftsByEvent(String eventId) async {
     await _giftModel.deleteGiftsByEvent(eventId);
   }
+
+  Future<void> pledgeGift(int giftId, String userId) async {
+    await _giftModel.updateGift(giftId, {'status': 'pledged', 'pledged_by': userId});
+  }
+
+  Future<void> unpledgeGift(int giftId) async {
+    await _giftModel.updateGift(giftId, {'status': 'available', 'pledged_by': ''});
+  }
+
+  Future<List<Map<String, dynamic>>> fetchGiftsForUser(String userId) async {
+    return await _giftModel.fetchGiftsForUser(userId);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchGiftsPledgedByUser(String userId) async {
+    return await _giftModel.fetchGiftsPledgedByUser(userId);
+  }
+
 }

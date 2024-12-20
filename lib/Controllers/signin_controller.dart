@@ -37,6 +37,7 @@ class SignInController {
 
         if (userDoc.exists) {
           Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          userData.remove('friends');
           await db.insert('Users', userData);
         }
       }
@@ -50,6 +51,7 @@ class SignInController {
           return 'Wrong password provided.';
         }
       }
+      print(e);
       return 'An error occurred: $e';
     }
   }

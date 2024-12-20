@@ -75,6 +75,7 @@ class MyDatabaseClass {
     category TEXT NOT NULL,
     price REAL NOT NULL,
     status TEXT NOT NULL,
+    pledged_by TEXT,
     published INTEGER NOT NULL CHECK (published IN (0, 1)),
     event_id Text NOT NULL,
     firebase_id Text,
@@ -92,6 +93,8 @@ class MyDatabaseClass {
       FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE
     );
   ''');
+
+
   }
 
 

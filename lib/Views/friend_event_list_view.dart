@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../Controllers/friends_event_controller.dart';
+import 'friend_gift_list.dart';
 
 class FriendEventListPage extends StatefulWidget {
   final String friendFirebaseId;
@@ -216,7 +217,15 @@ class _FriendEventListPageState extends State<FriendEventListPage> {
                                       subtitle: Text(
                                           'Category: ${event['category']} | Status: $status'),
                                       onTap: () {
-                                        // Add navigation to detailed view if needed
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FriendGiftListPage(
+                                              friendEventId: event['firebase_id'], // Pass the event ID
+                                              friendEventName: event['name'],     // Pass the event name
+                                            ),
+                                          ),
+                                        );
                                       },
                                     ),
                                   );
