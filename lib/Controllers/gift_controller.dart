@@ -21,11 +21,13 @@ class GiftController {
   }
 
   Future<void> updateGift(int giftId, Map<String, dynamic> updatedData) async {
+    print('Updating gift with ID: $giftId to data: $updatedData');
     // Update in SQLite
     await _giftModel.updateGift(giftId, updatedData);
 
     // If published, update in Firebase
     if (updatedData['published'] == 1) {
+      print('Updating Firestore for gift with ID: $giftId');
       await _giftModel.publishGiftToFirebase(updatedData);
     }
   }

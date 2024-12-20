@@ -20,9 +20,10 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
   late TextEditingController descriptionController;
   late TextEditingController categoryController;
   late TextEditingController priceController;
+  late TextEditingController imageUrlController;
   bool isPledged = false;
   bool isPublished = false;
-  File? selectedImage;
+  // File? selectedImage;
 
   @override
   void initState() {
@@ -31,24 +32,12 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
     descriptionController = TextEditingController(text: widget.gift['description']);
     categoryController = TextEditingController(text: widget.gift['category']);
     priceController = TextEditingController(text: widget.gift['price']?.toString());
+    imageUrlController = TextEditingController(text: widget.gift['imageLink']);
     isPledged = widget.gift['status'] == 'pledged';
     isPublished = widget.gift['published'] == 1;
 
-    // Load existing image if available
-    if (widget.gift['imageLink'] != null) {
-      selectedImage = File(widget.gift['imageLink']);
-    }
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        selectedImage = File(pickedFile.path);
-      });
-    }
-  }
 
   Future<void> _saveGift() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) {
@@ -58,6 +47,7 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
       return;
     }
 
+
     final updatedGift = {
       'id': widget.gift['id'],
       'name': nameController.text,
@@ -66,7 +56,7 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
       'price': double.tryParse(priceController.text) ?? 0.0,
       'status': isPledged ? 'pledged' : 'available',
       'published': isPublished ? 1 : 0,
-      'imageLink': selectedImage?.path ?? widget.gift['imageLink'], // Keep existing path if no new image
+      'imageLink': imageUrlController.text, // Keep existing path if no new image
       'firebase_id': widget.gift['firebase_id'], // Ensure firebase_id is retained
       'pledged_by': isPledged ? await signInController.getUserUID() : '',
       'event_id': widget.gift['event_id'],
@@ -106,35 +96,25 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            GestureDetector(
-              onTap: isPledged
-                  ? null // Disable image change for pledged gifts
-                  : _pickImage,
-              child: Container(
-                height: 150,
-                width: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                  image: selectedImage != null
-                      ? DecorationImage(
-                    image: FileImage(selectedImage!),
-                    fit: BoxFit.cover,
-                  )
-                      : widget.gift['imageLink'] != null
-                      ? DecorationImage(
-                    image: FileImage(File(widget.gift['imageLink'])),
-                    fit: BoxFit.cover,
-                  )
-                      : const DecorationImage(
-                    image: AssetImage('assets/gift_placeholder.png'),
-                    fit: BoxFit.cover,
-                  ),
+            Container(
+              height: 150,
+              width: 150,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+                image: imageUrlController.text.isNotEmpty
+                    ? DecorationImage(
+                  image: NetworkImage(imageUrlController.text),
+                  fit: BoxFit.cover,
+                )
+                    : const DecorationImage(
+                  image: AssetImage('assets/gift_placeholder.png'),
+                  fit: BoxFit.cover,
                 ),
-                child: selectedImage == null && widget.gift['imageLink'] == null
-                    ? const Icon(Icons.add_a_photo, color: Colors.grey)
-                    : null,
               ),
+              child: imageUrlController.text.isEmpty
+                  ? const Icon(Icons.add_a_photo, color: Colors.grey)
+                  : null,
             ),
             const SizedBox(height: 20),
             Padding(

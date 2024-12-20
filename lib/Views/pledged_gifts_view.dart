@@ -41,9 +41,11 @@ class _PledgedGiftsPageState extends State<PledgedGiftsPage> {
 
   Future<void> _toggleGiftStatus(int giftId, String currentStatus) async {
     String newStatus = currentStatus == 'pledged' ? 'purchased' : 'pledged';
+    print('Toggling gift ID: $giftId from $currentStatus to $newStatus');
     await _giftController.updateGift(giftId, {'status': newStatus});
-    _loadGifts();
+    await _loadGifts(); // Ensure UI refresh after update
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +148,12 @@ class _PledgedGiftsPageState extends State<PledgedGiftsPage> {
                               if (selectedFilter == 'For Me') ...[
                                 IconButton(
                                   icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                                  onPressed: () => _toggleGiftStatus(
-                                    gift['id'],
-                                    gift['status'],
-                                  ),
+                                  onPressed: () {
+                                    _toggleGiftStatus(
+                                      gift['id'],
+                                      gift['status'],
+                                    );
+                                  },
                                 ),
                               ],
                             ],
