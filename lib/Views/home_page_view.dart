@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Controllers/friend_controller.dart';
 import '../Controllers/signin_controller.dart';
-import 'package:hedieaty/EventListPage.dart';
+import 'my_event_list_view.dart';
 import 'friend_event_list_view.dart';
 
 class HomePage extends StatefulWidget {
