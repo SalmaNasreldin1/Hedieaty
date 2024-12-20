@@ -59,4 +59,22 @@ class SignInController {
   Future<String?> getUserUID() async {
     return await _secureStorage.read(key: 'userUID');
   }
+
+  Future<String?> fetchUserName(String uid) async {
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('Users').doc(uid).get();
+      if (userDoc.exists) {
+        return userDoc['name'] as String?; // Safely cast to String
+      }
+    } catch (e) {
+      print('Error fetching user name: $e');
+    }
+    return null; // Return null if name couldn't be fetched
+  }
+
+  Future<void> logout() async {
+    await _firebaseAuth.signOut();
+    await _secureStorage.deleteAll(); // Clear stored session data
+  }
+
 }

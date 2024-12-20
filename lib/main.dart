@@ -100,7 +100,7 @@
 
 import 'package:flutter/material.dart';
 import 'Views/home_page_view.dart';
-import 'ProfilePage.dart';
+import 'Views/profile_view.dart';
 import 'package:hedieaty/Views/pledged_gifts_view.dart';
 import 'Views/signin_view.dart';
 import 'package:firebase_core/firebase_core.dart';
