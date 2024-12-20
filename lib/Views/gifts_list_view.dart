@@ -26,7 +26,7 @@ class _GiftListPageState extends State<GiftListPage> {
   List<Map<String, dynamic>> gifts = [];
   String selectedFilter = 'All';
   String searchQuery = '';
-  String sortBy = 'name'; // Default sort by name
+  String sortBy = 'None'; // Default sort by name
 
   @override
   void initState() {
@@ -64,22 +64,38 @@ class _GiftListPageState extends State<GiftListPage> {
   }
 
   void _applyFilters() {
-    List<Map<String, dynamic>> filteredGifts = gifts;
+    // Create a mutable copy of the gifts list
+    List<Map<String, dynamic>> filteredGifts = List.from(gifts);
 
     // Apply the search query
     if (searchQuery.isNotEmpty) {
       filteredGifts = filteredGifts
           .where((gift) =>
-          gift['name'].toLowerCase().contains(searchQuery.toLowerCase()))
+      gift['name']?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+          false)
           .toList();
     }
 
+    // Apply sorting if not "None"
+    if (sortBy == 'Name') {
+      filteredGifts.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
+    } else if (sortBy == 'Category') {
+      filteredGifts.sort((a, b) =>
+          (a['category'] ?? '').compareTo(b['category'] ?? ''));
+    } else if (sortBy == 'Status') {
+      filteredGifts.sort((a, b) =>
+          (a['status'] ?? '').compareTo(b['status'] ?? ''));
+    } else if (sortBy == 'Price') {
+      filteredGifts.sort((a, b) =>
+          (a['price'] ?? 0.0).compareTo(b['price'] ?? 0.0));
+    }
 
     // Update the displayed gifts
     setState(() {
       gifts = filteredGifts;
     });
   }
+
 
 
   Future<void> _showGiftDialog({Map<String, dynamic>? gift}) async {
@@ -228,48 +244,6 @@ class _GiftListPageState extends State<GiftListPage> {
     }
   }
 
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Sort by Name'),
-              onTap: () {
-                setState(() {
-                  sortBy = 'name';
-                  _applyFilters();
-                });
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Sort by Category'),
-              onTap: () {
-                setState(() {
-                  sortBy = 'category';
-                  _applyFilters();
-                });
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Sort by Status'),
-              onTap: () {
-                setState(() {
-                  sortBy = 'status';
-                  _applyFilters();
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
 
   @override
@@ -310,9 +284,30 @@ class _GiftListPageState extends State<GiftListPage> {
                     decoration: InputDecoration(
                       hintText: 'Search Gifts...',
                       prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
+                      suffixIcon: DropdownButton<String>(
+                        value: sortBy, // Ensure the default value is in the list
                         icon: const Icon(Icons.sort),
-                        onPressed: _showSortOptions,
+                        underline: Container(), // Removes the underline
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              sortBy = newValue;
+                              _applyFilters(); // Reapply filters and sorting
+                            });
+                          }
+                        },
+                        items: <String>[
+                          'None',
+                          'Name',
+                          'Category',
+                          'Status',
+                          'Price',
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
                       ),
                       fillColor: Colors.white,
                       filled: true,

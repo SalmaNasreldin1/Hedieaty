@@ -18,6 +18,7 @@ class _EventListPageState extends State<EventListPage> {
   String searchQuery = '';
 
 
+
   @override
   void initState() {
     super.initState();
@@ -29,9 +30,10 @@ class _EventListPageState extends State<EventListPage> {
     List<Map<String, dynamic>> data = await _eventController.fetchEvents();
     setState(() {
       events = data;
-      _applyFilters(); // Update displayedEvents based on the current filter
+      _applyFilters();// Update displayedEvents based on the current filter
     });
   }
+
 
   void _applyFilters() {
     List<Map<String, dynamic>> filteredEvents = events;
@@ -196,6 +198,24 @@ class _EventListPageState extends State<EventListPage> {
     return 'Passed';
   }
 
+  String selectedSortOption = 'None';
+
+  void _applySorting() {
+    List<Map<String, dynamic>> sortedEvents = List<Map<String, dynamic>>.from(displayedEvents);
+
+    if (selectedSortOption == 'Name') {
+      sortedEvents.sort((a, b) => a['name'].compareTo(b['name']));
+    } else if (selectedSortOption == 'Category') {
+      sortedEvents.sort((a, b) => a['category'].compareTo(b['category']));
+    } else if (selectedSortOption == 'Status') {
+      sortedEvents.sort((a, b) => _getEventStatus(a['date']).compareTo(_getEventStatus(b['date'])));
+    }
+
+    setState(() {
+      displayedEvents = sortedEvents;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,10 +254,30 @@ class _EventListPageState extends State<EventListPage> {
                     decoration: InputDecoration(
                       hintText: 'Search Events...',
                       prefixIcon: const Icon(Icons.search),
-                      // suffixIcon: IconButton(
-                      //   icon: const Icon(Icons.filter_list),
-                      //   onPressed: () {},
-                      // ),
+                      suffixIcon: DropdownButton<String>(
+                        value: selectedSortOption,
+                        icon: const Icon(Icons.sort),
+                        underline: Container(), // Removes the underline
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedSortOption = newValue;
+                              _applySorting(); // Apply sorting logic
+                            });
+                          }
+                        },
+                        items: <String>[
+                          'None',
+                          'Name',
+                          'Category',
+                          'Status'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),

@@ -22,6 +22,7 @@ class _FriendGiftListPageState extends State<FriendGiftListPage> {
   final SignInController signInController = SignInController();
   List<Map<String, dynamic>> gifts = [];
   String searchQuery = '';
+  String sortBy = 'None';
 
   @override
   void initState() {
@@ -37,22 +38,6 @@ class _FriendGiftListPageState extends State<FriendGiftListPage> {
     });
   }
 
-  void _applyFilters() {
-    List<Map<String, dynamic>> filteredGifts = gifts;
-
-    // Apply the search query
-    if (searchQuery.isNotEmpty) {
-      filteredGifts = filteredGifts
-          .where((gift) =>
-          gift['name'].toLowerCase().contains(searchQuery.toLowerCase()))
-          .toList();
-    }
-
-    // Update the displayed gifts
-    setState(() {
-      gifts = filteredGifts;
-    });
-  }
 
 
   void _togglePledgeStatus(Map<String, dynamic> gift, int index, String userId) async {
@@ -96,6 +81,40 @@ class _FriendGiftListPageState extends State<FriendGiftListPage> {
     }
   }
 
+  void _applyFilters() {
+    // Create a mutable copy of the gifts list
+    List<Map<String, dynamic>> filteredGifts = List.from(gifts);
+
+    // Apply the search query
+    if (searchQuery.isNotEmpty) {
+      filteredGifts = filteredGifts
+          .where((gift) =>
+      gift['name']?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+          false)
+          .toList();
+    }
+
+    // Apply sorting if not "None"
+    if (sortBy == 'Name') {
+      filteredGifts.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
+    } else if (sortBy == 'Category') {
+      filteredGifts.sort((a, b) =>
+          (a['category'] ?? '').compareTo(b['category'] ?? ''));
+    } else if (sortBy == 'Status') {
+      filteredGifts.sort((a, b) =>
+          (a['status'] ?? '').compareTo(b['status'] ?? ''));
+    } else if (sortBy == 'Price') {
+      filteredGifts.sort((a, b) =>
+          (a['price'] ?? 0.0).compareTo(b['price'] ?? 0.0));
+    }
+
+    // Update the displayed gifts
+    setState(() {
+      gifts = filteredGifts;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,6 +153,31 @@ class _FriendGiftListPageState extends State<FriendGiftListPage> {
                     decoration: InputDecoration(
                       hintText: 'Search Gifts...',
                       prefixIcon: const Icon(Icons.search),
+                      suffixIcon: DropdownButton<String>(
+                        value: sortBy, // Ensure the default value is in the list
+                        icon: const Icon(Icons.sort),
+                        underline: Container(), // Removes the underline
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              sortBy = newValue;
+                              _applyFilters(); // Reapply filters and sorting
+                            });
+                          }
+                        },
+                        items: <String>[
+                          'None',
+                          'Name',
+                          'Category',
+                          'Status',
+                          'Price',
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),

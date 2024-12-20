@@ -94,6 +94,10 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            onPressed: _showAddFriendDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.person_add, color: Colors.white),
             onPressed: _showAddFriendDialog,
           ),

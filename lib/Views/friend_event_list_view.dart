@@ -81,6 +81,24 @@ class _FriendEventListPageState extends State<FriendEventListPage> {
     return 'Passed';
   }
 
+  String selectedSortOption = 'None';
+
+  void _applySorting() {
+    List<Map<String, dynamic>> sortedEvents = List<Map<String, dynamic>>.from(displayedEvents);
+
+    if (selectedSortOption == 'Name') {
+      sortedEvents.sort((a, b) => a['name'].compareTo(b['name']));
+    } else if (selectedSortOption == 'Category') {
+      sortedEvents.sort((a, b) => a['category'].compareTo(b['category']));
+    } else if (selectedSortOption == 'Status') {
+      sortedEvents.sort((a, b) => _getEventStatus(a['date']).compareTo(_getEventStatus(b['date'])));
+    }
+
+    setState(() {
+      displayedEvents = sortedEvents;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,6 +137,30 @@ class _FriendEventListPageState extends State<FriendEventListPage> {
                     decoration: InputDecoration(
                       hintText: 'Search Events...',
                       prefixIcon: const Icon(Icons.search),
+                      suffixIcon: DropdownButton<String>(
+                        value: selectedSortOption,
+                        icon: const Icon(Icons.sort),
+                        underline: Container(), // Removes the underline
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedSortOption = newValue;
+                              _applySorting(); // Apply sorting logic
+                            });
+                          }
+                        },
+                        items: <String>[
+                          'None',
+                          'Name',
+                          'Category',
+                          'Status'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
