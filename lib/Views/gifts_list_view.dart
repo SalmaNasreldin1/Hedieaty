@@ -81,19 +81,15 @@ class _GiftListPageState extends State<GiftListPage> {
     });
   }
 
+
   Future<void> _showGiftDialog({Map<String, dynamic>? gift}) async {
     final nameController = TextEditingController(text: gift?['name'] ?? '');
     final descriptionController = TextEditingController(text: gift?['description'] ?? '');
     final categoryController = TextEditingController(text: gift?['category'] ?? '');
     final priceController = TextEditingController(text: gift?['price']?.toString() ?? '');
+    final imageUrlController = TextEditingController(text: gift?['imageLink'] ?? '');
     bool isPledged = gift?['status'] == 'pledged';
     bool isPublished = gift?['published'] == 1;
-    File? selectedImage;
-
-    // Load existing image if editing
-    if (gift != null && gift['imageLink'] != null) {
-      selectedImage = File(gift['imageLink']);
-    }
 
     await showDialog(
       context: context,
@@ -102,72 +98,69 @@ class _GiftListPageState extends State<GiftListPage> {
           title: Text(gift == null ? 'Add Gift' : 'Edit Gift'),
           content: StatefulBuilder(
             builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Gift Name'),
-                  ),
-                  TextField(
-                    controller: descriptionController,
-                    decoration:
-                    const InputDecoration(labelText: 'Description'),
-                  ),
-                  TextField(
-                    controller: categoryController,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                  ),
-                  TextField(
-                    controller: priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Price'),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Publish Gift'),
-                    value: isPublished,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        isPublished = value ?? false;
-                      });
-                    },
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Pledged'),
-                    value: isPledged,
-                    onChanged: gift == null
-                        ? (value) {
-                      setState(() {
-                        isPledged = value ?? false;
-                      });
-                    }
-                        : null,
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () async {
-                      final picker = ImagePicker();
-                      final pickedFile = await picker.pickImage(
-                          source: ImageSource.gallery);
-                      if (pickedFile != null) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Gift Name'),
+                    ),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(labelText: 'Description'),
+                    ),
+                    TextField(
+                      controller: categoryController,
+                      decoration: const InputDecoration(labelText: 'Category'),
+                    ),
+                    TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Price'),
+                    ),
+                    TextField(
+                      controller: imageUrlController,
+                      decoration: const InputDecoration(labelText: 'Image URL'),
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Publish Gift'),
+                      value: isPublished,
+                      onChanged: (bool? value) {
                         setState(() {
-                          selectedImage = File(pickedFile.path);
+                          isPublished = value ?? false;
+                        });
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Pledged'),
+                      value: isPledged,
+                      onChanged: gift == null
+                          ? (value) {
+                        setState(() {
+                          isPledged = value ?? false;
                         });
                       }
-                    },
-                    child: Container(
+                          : null,
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
                       height: 100,
                       width: 100,
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey),
                         borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          image: imageUrlController.text.isNotEmpty
+                              ? NetworkImage(imageUrlController.text) // Display the entered image URL
+                              : const AssetImage('assets/gift_placeholder.png')
+                          as ImageProvider,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      child: selectedImage != null
-                          ? Image.file(selectedImage!, fit: BoxFit.cover)
-                          : const Icon(Icons.add_a_photo, color: Colors.grey),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -178,11 +171,9 @@ class _GiftListPageState extends State<GiftListPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (nameController.text.isEmpty ||
-                    priceController.text.isEmpty) {
+                if (nameController.text.isEmpty || priceController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Name and Price are required')),
+                    const SnackBar(content: Text('Name and Price are required')),
                   );
                   return;
                 }
@@ -196,7 +187,7 @@ class _GiftListPageState extends State<GiftListPage> {
                   'pledged_by': isPledged ? await signInController.getUserUID() : '',
                   'event_id': widget.eventId,
                   'published': isPublished ? 1 : 0,
-                  'imageLink': selectedImage?.path,// Include published field
+                  'imageLink': imageUrlController.text, // Save the URL link
                 };
 
                 if (gift == null) {
@@ -215,6 +206,7 @@ class _GiftListPageState extends State<GiftListPage> {
       },
     );
   }
+
 
 
   void _navigateToGiftDetails(Map<String, dynamic> gift) async {
@@ -373,10 +365,9 @@ class _GiftListPageState extends State<GiftListPage> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     image: DecorationImage(
-                                      image: gift['imageLink'] != null
-                                          ? FileImage(File(gift['imageLink']))
-                                          : const AssetImage('assets/gift_placeholder.png')
-                                      as ImageProvider,
+                                      image: gift['imageLink'] != null && gift['imageLink'].isNotEmpty
+                                          ? NetworkImage(gift['imageLink']) // Use NetworkImage for the URL
+                                          : const AssetImage('assets/gift_placeholder.png') as ImageProvider,
                                       fit: BoxFit.cover,
                                     ),
                                     color: Colors.grey[200],
